@@ -36,8 +36,38 @@ kill_process() {
 }
 
 bg_run() {
-    local log_file="run_$$.log"
-    nohup "$@" > "$log_file" 2>&1 &
-    echo "Background process started with PID $! - Log file: $log_file"
+    if [ $# -eq 0 ]; then
+        echo "Usage: bg_run <command> [args...]"
+        return 1
+    fi
+
+    local prefix="run"
+    local timestamp
+    timestamp=$(date +"%Y%m%d_%H%M%S")
+    local log_file="${prefix}_${timestamp}_$$.log"
+
+    # 把执行命令记录到日志文件开头
+    {
+        echo "===== bg_run started ====="
+        echo "Time : $(date)"
+        echo "PID  : TBD (assigned after nohup)"
+        echo "Cmd  : $*"
+        echo "==========================="
+        echo
+    } > "$log_file"
+
+    # 后台执行命令
+    nohup "$@" >> "$log_file" 2>&1 &
+    local pid=$!
+
+    # 回写 PID（可选）
+    sed -i "s/PID  : TBD (assigned after nohup)/PID  : $pid/" "$log_file"
+
+    echo "Background process started:"
+    echo "  PID: $pid"
+    echo "  Log: $log_file"
+
+    echo "$pid"
 }
 
+alias ifconfig="ipconfig"
